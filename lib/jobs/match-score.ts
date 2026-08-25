@@ -6,6 +6,10 @@ type MatchInput = {
   location: string | null
   jobType: string | null
   experienceLevel: string | null
+  experienceMinMonths: number | null
+  experienceMaxMonths: number | null
+  requiredExperience: string
+  fresherAccepted: boolean
   tags: string[]
 }
 
@@ -21,6 +25,38 @@ function containsKeyword(text: string, keyword: string): boolean {
   }
   const pattern = new RegExp(`\\b${normalizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
   return pattern.test(text)
+}
+
+function experienceFit(
+  context: JobSearchContext,
+  job: MatchInput
+): { factor: number; label: string } {
+  if (job.experienceMinMonths === null) {
+    return { factor: 1, label: 'unknown' }
+  }
+
+  const candidateMonths = context.totalExperienceMonths
+
+  if (candidateMonths < job.experienceMinMonths) {
+    const gap = job.experienceMinMonths - candidateMonths
+    return {
+      factor: gap >= 24 ? 0.25 : gap >= 12 ? 0.45 : 0.7,
+      label: 'poor',
+    }
+  }
+
+  if (
+    job.experienceMaxMonths !== null &&
+    candidateMonths > job.experienceMaxMonths
+  ) {
+    const gap = candidateMonths - job.experienceMaxMonths
+    return {
+      factor: gap >= 24 ? 0.45 : gap >= 12 ? 0.7 : 0.85,
+      label: 'overqualified',
+    }
+  }
+
+  return { factor: 1.08, label: 'strong' }
 }
 
 export function calculateMatchScore(
@@ -56,11 +92,22 @@ export function calculateMatchScore(
     if (context.jobType.toLowerCase() === job.jobType.toLowerCase()) score += 6
   }
 
-  if (context.experienceLevel && job.experienceLevel) {
+  if (
+    job.experienceMinMonths === null &&
+    context.experienceLevel &&
+    job.experienceLevel
+  ) {
     if (context.experienceLevel.toLowerCase() === job.experienceLevel.toLowerCase()) {
       score += 5
     }
   }
 
-  return Math.min(Math.round(score), 100)
+  const fit = experienceFit(context, job)
+  const finalScore = Math.min(Math.max(Math.round(score * fit.factor), 0), 100)
+
+  console.log(
+    `[Experience] Job: ${job.title} | Required: ${job.requiredExperience} | Experience match: ${fit.label} | Final match score: ${finalScore}`
+  )
+
+  return finalScore
 }

@@ -36,6 +36,7 @@ type JobsDashboardProps = {
   initialError: string | null
   firstName: string | null
   role: string
+  totalExperienceYears: number
   completeness: ProfileCompleteness
   activity: ActivityItem[]
   profileIncomplete: boolean
@@ -48,6 +49,7 @@ export function JobsDashboard({
   initialError,
   firstName,
   role,
+  totalExperienceYears,
   completeness,
   activity,
   profileIncomplete,
@@ -118,6 +120,7 @@ export function JobsDashboard({
       <WelcomeBanner
         firstName={firstName}
         role={role}
+        totalExperienceYears={totalExperienceYears}
         fromCache={fromCache}
         fetchedAt={fetchedAt}
       />

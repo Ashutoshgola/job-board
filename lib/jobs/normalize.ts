@@ -2,6 +2,11 @@ import type { JobPlatform } from '@/lib/jobs/platforms'
 import { calculateMatchScore } from '@/lib/jobs/match-score'
 import type { AdzunaJob } from '@/lib/jobs/jsearch'
 import type { JobSearchContext } from '@/lib/jobs/profile-context'
+import {
+  extractExperienceRequirement,
+  formatExperienceRequirement,
+  type ExperienceRequirement,
+} from '@/lib/jobs/experience'
 
 export type NormalizedJob = {
   platform: JobPlatform
@@ -12,35 +17,16 @@ export type NormalizedJob = {
   salary: string | null
   job_type: string | null
   experience_level: string | null
+  experience_min_months: number | null
+  experience_max_months: number | null
+  required_experience: string
+  fresher_accepted: boolean
   description: string | null
   tags: string[]
   match_score: number
   job_url: string
   source_url: string
 }
-
-const EXPERIENCE_PATTERNS: Array<{
-  pattern: RegExp
-  level: string
-}> = [
-  {
-    pattern: /\b(principal|staff|director|vp|head of)\b/i,
-    level: 'Senior',
-  },
-  {
-    pattern: /\b(senior|sr\.?|lead|architect)\b/i,
-    level: 'Senior',
-  },
-  {
-    pattern: /\b(mid[- ]level|intermediate)\b/i,
-    level: 'Mid',
-  },
-  {
-    pattern:
-      /\b(junior|jr\.?|entry[- ]level|graduate|intern|fresher|trainee)\b/i,
-    level: 'Entry',
-  },
-]
 
 function normalizeText(value: string): string {
   return value
@@ -49,14 +35,10 @@ function normalizeText(value: string): string {
     .trim()
 }
 
-function extractExperienceLevel(text: string): string | null {
-  for (const { pattern, level } of EXPERIENCE_PATTERNS) {
-    if (pattern.test(text)) {
-      return level
-    }
-  }
-
-  return null
+function experienceLevelFromRequirement(
+  requirement: ExperienceRequirement | null
+): string | null {
+  return requirement?.level ?? null
 }
 
 function normalizeEmploymentType(
@@ -261,9 +243,8 @@ export function normalizeJSearchResult(
     result.contract_time ?? '',
   ].join(' ')
 
-  const experienceLevel =
-    extractExperienceLevel(combinedText) ??
-    context.experienceLevel
+  const experienceRequirement = extractExperienceRequirement(combinedText)
+  const experienceLevel = experienceLevelFromRequirement(experienceRequirement)
 
   const tags = extractTags(
     result,
@@ -292,6 +273,14 @@ export function normalizeJSearchResult(
 
     experience_level: experienceLevel,
 
+    experience_min_months: experienceRequirement?.minMonths ?? null,
+
+    experience_max_months: experienceRequirement?.maxMonths ?? null,
+
+    required_experience: formatExperienceRequirement(experienceRequirement),
+
+    fresher_accepted: experienceRequirement?.fresherAccepted ?? false,
+
     description,
 
     tags,
@@ -311,6 +300,10 @@ export function normalizeJSearchResult(
       location: normalized.location,
       jobType: normalized.job_type,
       experienceLevel: normalized.experience_level,
+      experienceMinMonths: normalized.experience_min_months,
+      experienceMaxMonths: normalized.experience_max_months,
+      requiredExperience: normalized.required_experience,
+      fresherAccepted: normalized.fresher_accepted,
       tags: normalized.tags,
     }
   )

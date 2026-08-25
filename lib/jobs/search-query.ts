@@ -1,13 +1,6 @@
 import type { JobPlatform } from '@/lib/jobs/platforms'
 import type { JobSearchContext } from '@/lib/jobs/profile-context'
 
-function cleanPart(value: string): string {
-  return value
-    .replace(/\s+/g, ' ')
-    .replace(/[|]+/g, ' ')
-    .trim()
-}
-
 /*
  * Adzuna works better with simple keyword searches.
  *
@@ -23,15 +16,19 @@ function cleanPart(value: string): string {
  */
 
 export function buildPlatformSearchQuery(
-  _platform: JobPlatform,
-  _context: JobSearchContext
+  platform: JobPlatform,
+  context: JobSearchContext
 ): string {
+  void platform
+  void context
   return 'Full Stack Developer'
 }
 export function buildFallbackSearchQuery(
-  _platform: JobPlatform,
-  _context: JobSearchContext
+  platform: JobPlatform,
+  context: JobSearchContext
 ): string {
+  void platform
+  void context
   return 'Software Engineer'
 }
 

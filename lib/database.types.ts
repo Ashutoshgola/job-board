@@ -22,6 +22,9 @@ export type Database = {
           created_at: string
           description: string | null
           experience_level: string | null
+          experience_max_months: number | null
+          experience_min_months: number | null
+          fresher_accepted: boolean
           fetched_at: string
           id: string
           job_type: string | null
@@ -31,6 +34,7 @@ export type Database = {
           platform: string
           salary: string | null
           saved_status: boolean
+          required_experience: string
           source_url: string
           tags: Json
           title: string
@@ -43,6 +47,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           experience_level?: string | null
+          experience_max_months?: number | null
+          experience_min_months?: number | null
+          fresher_accepted?: boolean
           fetched_at?: string
           id?: string
           job_type?: string | null
@@ -52,6 +59,7 @@ export type Database = {
           platform: string
           salary?: string | null
           saved_status?: boolean
+          required_experience?: string
           source_url: string
           tags?: Json
           title: string
@@ -64,6 +72,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           experience_level?: string | null
+          experience_max_months?: number | null
+          experience_min_months?: number | null
+          fresher_accepted?: boolean
           fetched_at?: string
           id?: string
           job_type?: string | null
@@ -73,6 +84,7 @@ export type Database = {
           platform?: string
           salary?: string | null
           saved_status?: boolean
+          required_experience?: string
           source_url?: string
           tags?: Json
           title?: string

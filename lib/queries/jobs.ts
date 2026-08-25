@@ -137,6 +137,21 @@ async function getCachedJobs(
   return data ?? []
 }
 
+function getEmploymentType(jobType: string): string | null {
+  switch (jobType.toLowerCase()) {
+    case 'full-time':
+      return 'FULLTIME'
+    case 'part-time':
+      return 'PARTTIME'
+    case 'contract':
+      return 'CONTRACTOR'
+    case 'internship':
+      return 'INTERN'
+    default:
+      return null
+  }
+}
+
 async function upsertJobs(
   userId: string,
   jobs: NormalizedJob[]
@@ -189,6 +204,10 @@ async function upsertJobs(
       job_type: job.job_type,
       experience_level:
         job.experience_level,
+      experience_min_months: job.experience_min_months,
+      experience_max_months: job.experience_max_months,
+      required_experience: job.required_experience,
+      fresher_accepted: job.fresher_accepted,
       description: job.description,
       tags: job.tags,
       match_score: job.match_score,
@@ -211,7 +230,7 @@ async function upsertJobs(
   } = await supabase
     .from('jobs')
     .upsert(rows, {
-      onConflict: 'user_id,source_url',
+      onConflict: 'user_id,platform,source_url',
     })
     .select('*')
 
@@ -222,27 +241,6 @@ async function upsertJobs(
   return data ?? []
 }
 
-function getEmploymentType(
-  jobType: string
-): string | null {
-  switch (jobType.toLowerCase()) {
-    case 'full-time':
-      return 'FULLTIME'
-
-    case 'part-time':
-      return 'PARTTIME'
-
-    case 'contract':
-      return 'CONTRACTOR'
-
-    case 'internship':
-      return 'INTERN'
-
-    default:
-      return null
-  }
-}
-
 async function fetchPlatformJobs(
   platform: JobPlatform,
   context: JobSearchContext
@@ -250,46 +248,26 @@ async function fetchPlatformJobs(
   jobs: NormalizedJob[]
   query: string
   fallbackUsed: boolean
+  errors: string[]
 }> {
-  const primaryQuery =
-    buildPlatformSearchQuery(
-      platform,
-      context
-    )
+  const primaryQuery = buildPlatformSearchQuery(platform, context)
 
-  /*
-   * Adzuna handles country through /jobs/in/.
-   *
-   * We only pass a location when the user has
-   * selected a specific city/location.
-   */
   const location =
     context.location &&
-    context.location.toLowerCase() !==
-      'remote' &&
-    context.location.toLowerCase() !==
-      'india'
+    context.location.toLowerCase() !== 'remote' &&
+    context.location.toLowerCase() !== 'india'
       ? context.location
       : null
 
-  console.log(
-    `[Jobs] Fetching ${platform} with query: "${primaryQuery}"`
-  )
+  console.log(`[Jobs] Fetching source: ${platform}`)
+  console.log(`[Jobs] ${platform} query: "${primaryQuery}"`)
 
-  let results = await searchJSearch(
-    primaryQuery,
-    {
-      remoteOnly:
-        context.remoteOnly,
-
-      employmentType:
-        getEmploymentType(
-          context.jobType
-        ),
-
-      location,
-    }
-  )
+  let results = await searchJSearch(primaryQuery, {
+    remoteOnly: context.remoteOnly,
+    employmentType: getEmploymentType(context.jobType),
+    location,
+  })
+  const errors: string[] = []
 
   let fallbackUsed = false
 
@@ -311,20 +289,11 @@ async function fetchPlatformJobs(
     if (
       fallbackQuery !== primaryQuery
     ) {
-      results = await searchJSearch(
-        fallbackQuery,
-        {
-          remoteOnly:
-            context.remoteOnly,
-
-          employmentType:
-            getEmploymentType(
-              context.jobType
-            ),
-
-          location,
-        }
-      )
+      results = await searchJSearch(fallbackQuery, {
+        remoteOnly: context.remoteOnly,
+        employmentType: getEmploymentType(context.jobType),
+        location,
+      })
 
       fallbackUsed = true
 
@@ -349,6 +318,7 @@ async function fetchPlatformJobs(
     ),
 
     fallbackUsed,
+    errors,
   }
 }
 
@@ -385,10 +355,11 @@ async function fetchJobsFromJSearch(
           jobs: platformJobs,
           query,
           fallbackUsed,
+          errors: sourceErrors,
         } = result.value
 
         console.log(
-          `[Jobs] ${platform} query "${query}" returned ${platformJobs.length} jobs${
+          `[Jobs] Source: ${platform} returned ${platformJobs.length} jobs for query "${query}"${
             fallbackUsed
               ? ' (fallback)'
               : ''
@@ -396,6 +367,7 @@ async function fetchJobsFromJSearch(
         )
 
         jobs.push(...platformJobs)
+        errors.push(...sourceErrors.map((error) => `${platform}: ${error}`))
 
         return
       }
@@ -417,7 +389,7 @@ async function fetchJobsFromJSearch(
   )
 
   console.log(
-    `[Jobs] Total jobs fetched: ${jobs.length} from ${platforms.length} platforms`
+    `[Jobs] Total jobs fetched: ${jobs.length} from ${platforms.length} configured sources`
   )
 
   return {
@@ -432,8 +404,7 @@ function dedupeJobs(
   const seen = new Set<string>()
 
   return jobs.filter((job) => {
-    const key =
-      job.source_url || job.id
+    const key = `${job.platform}:${job.source_url || job.id}`
 
     if (seen.has(key)) {
       return false
@@ -523,7 +494,7 @@ export async function getJobsForUser(
     }
 
     /*
-     * Fetch jobs from Adzuna.
+    * Fetch jobs from Adzuna.
      */
     const fetchResult =
       await fetchJobsFromJSearch(

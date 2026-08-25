@@ -1,4 +1,9 @@
 import type { ProfileData } from '@/lib/queries/profile'
+import {
+  calculateTotalExperienceMonths,
+  getCandidateExperienceLevel,
+  type CandidateExperienceLevel,
+} from '@/lib/jobs/experience'
 
 export type JobSearchContext = {
   role: string
@@ -7,7 +12,9 @@ export type JobSearchContext = {
   remoteOnly: boolean
   skills: string[]
   techStack: string[]
-  experienceLevel: string
+  experienceLevel: CandidateExperienceLevel
+  totalExperienceMonths: number
+  totalExperienceYears: number
   educationSummary: string
 }
 
@@ -76,46 +83,6 @@ function inferJobPreferences(
  * Infer experience level from previous work experience
  * and professional summary.
  */
-function inferExperienceLevel(
-  workExperiences: ProfileData['workExperiences'],
-  summary: string | null | undefined
-): string {
-  const titles = workExperiences
-    .map((exp) => exp.title.toLowerCase())
-    .join(' ')
-
-  const text = `${titles} ${summary ?? ''}`.toLowerCase()
-
-  // Senior-level keywords
-  if (
-    /\b(principal|staff|director|vp|head of|senior|sr\.?|lead|architect)\b/.test(
-      text
-    )
-  ) {
-    return 'Senior'
-  }
-
-  // Entry-level keywords
-  if (
-    /\b(junior|jr\.?|intern|internship|graduate|entry[- ]level|fresher|trainee)\b/.test(
-      text
-    )
-  ) {
-    return 'Entry'
-  }
-
-  // Infer from number of previous experiences
-  if (workExperiences.length >= 5) {
-    return 'Senior'
-  }
-
-  if (workExperiences.length >= 2) {
-    return 'Mid'
-  }
-
-  return 'Entry'
-}
-
 /**
  * Normalize a job title into a broader role that JSearch
  * can search effectively.
@@ -270,6 +237,15 @@ export function buildJobSearchContext(
     data.profile?.location,
     summary
   )
+  const totalExperienceMonths = calculateTotalExperienceMonths(
+    data.workExperiences
+  )
+  const experienceLevel = getCandidateExperienceLevel(totalExperienceMonths)
+
+  console.log(
+    `[Experience] Candidate total experience: ${(totalExperienceMonths / 12).toFixed(1)} years`
+  )
+  console.log(`[Experience] Candidate level: ${experienceLevel}`)
 
   return {
     /*
@@ -315,10 +291,9 @@ export function buildJobSearchContext(
       ...projectTech,
     ]).slice(0, 8),
 
-    experienceLevel: inferExperienceLevel(
-      data.workExperiences,
-      summary
-    ),
+    experienceLevel,
+    totalExperienceMonths,
+    totalExperienceYears: totalExperienceMonths / 12,
 
     educationSummary:
       summarizeEducation(data),

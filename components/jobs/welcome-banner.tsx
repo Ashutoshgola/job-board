@@ -3,6 +3,7 @@ import { Sparkles } from 'lucide-react'
 type WelcomeBannerProps = {
   firstName: string | null
   role: string
+  totalExperienceYears: number
   fromCache: boolean
   fetchedAt: string | null
 }
@@ -20,6 +21,7 @@ function formatFetchedAt(value: string | null): string | null {
 export function WelcomeBanner({
   firstName,
   role,
+  totalExperienceYears,
   fromCache,
   fetchedAt,
 }: WelcomeBannerProps) {
@@ -40,6 +42,9 @@ export function WelcomeBanner({
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Top matches for <span className="font-medium text-foreground">{role}</span>{' '}
               across Greenhouse, Lever, Workable, and Wellfound — ranked by your profile.
+            </p>
+            <p className="mt-2 text-xs font-medium text-foreground">
+              Your experience: {totalExperienceYears.toFixed(1)} years
             </p>
           </div>
         </div>

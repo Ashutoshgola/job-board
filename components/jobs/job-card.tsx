@@ -117,6 +117,7 @@ export function JobCard({ job, onSavedChange }: JobCardProps) {
           {job.experience_level && (
             <Badge variant="outline">{job.experience_level}</Badge>
           )}
+          <Badge variant="outline">{job.required_experience}</Badge>
         </div>
 
         {tags.length > 0 && (

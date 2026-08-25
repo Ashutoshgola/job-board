@@ -83,6 +83,7 @@ export default async function JobsPage() {
       initialError={jobsResult.error}
       firstName={firstName}
       role={searchContext.role}
+      totalExperienceYears={searchContext.totalExperienceYears}
       completeness={completeness}
       activity={activity}
       profileIncomplete={profileIncomplete}
