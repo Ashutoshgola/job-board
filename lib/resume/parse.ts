@@ -10,9 +10,9 @@ export async function parseResume(
   file: Buffer,
   mimeType: string
 ): Promise<ParsedResume> {
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = process.env.ATS_GEMINI_API_KEY
   if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not configured')
+    throw new Error('ATS_GEMINI_API_KEY is not configured')
   }
 
   const ai = new GoogleGenAI({ apiKey })

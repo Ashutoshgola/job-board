@@ -1,5 +1,5 @@
 export function getGeminiModel(): string {
-  return process.env.GEMINI_MODEL?.trim() || 'gemini-3.6-flash'
+  return process.env.ATS_GEMINI_MODEL?.trim() || 'gemini-2.5-flash'
 }
 
 export function formatGeminiError(error: unknown): string {
@@ -8,6 +8,7 @@ export function formatGeminiError(error: unknown): string {
   }
 
   const raw = error.message.trim()
+
   if (!raw.startsWith('{')) {
     return raw
   }
@@ -16,6 +17,7 @@ export function formatGeminiError(error: unknown): string {
     const parsed = JSON.parse(raw) as {
       error?: { message?: string }
     }
+
     if (parsed.error?.message) {
       return parsed.error.message
     }

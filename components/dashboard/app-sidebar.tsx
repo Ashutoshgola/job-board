@@ -31,7 +31,7 @@ const mainNavItems = [
   { title: 'Resume', href: '/dashboard/resume', icon: File02Icon },
   { title: 'Profile', href: '/dashboard/profile', icon: UserIcon },
   {
-    title: 'Application Status',
+    title: 'Resume ATS',
     href: '/dashboard/application-status',
     icon: TaskDone01Icon,
   },
