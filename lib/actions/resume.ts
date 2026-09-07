@@ -53,14 +53,12 @@ export async function uploadAndParseResume(
       contentType: file.type,
       upsert: false,
     })
-
   if (uploadError) {
     return {
       success: false,
       error: uploadError.message || 'Failed to upload resume.',
     }
   }
-
   const { data: existingResumes } = await supabase
     .from('resumes')
     .select('id')
